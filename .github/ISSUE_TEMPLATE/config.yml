@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: AyuGram client bugs (Ghost mode, UI, protocol)
+    url: https://github.com/AyuGram/AyuGramDesktop/issues
+    about: Features of the messenger itself belong in the official AyuGram repo.
+  - name: Source fork on this account
+    url: https://github.com/stillemptyNOW/AyuGramDesktop
+    about: Full AyuGramDesktop source tree forked for Linux work.
