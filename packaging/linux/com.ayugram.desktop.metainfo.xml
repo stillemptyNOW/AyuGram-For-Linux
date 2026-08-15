@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component type="desktop">
+    <id>com.ayugram.desktop</id>
+    <metadata_license>CC0-1.0</metadata_license>
+    <project_license>GPL-3.0</project_license>
+    <name>AyuGram Desktop</name>
+    <summary>AyuGram Telegram client packaged for Linux</summary>
+    <summary xml:lang="ru">Клиент Telegram AyuGram, собранный для Linux</summary>
+    <description>
+        <p>Unofficial Linux packages of AyuGram Desktop: Ghost mode, anti-recall and extra customization, built for Linux Mint, Ubuntu, Debian and other distributions.</p>
+        <p xml:lang="ru">Неофициальные Linux-пакеты AyuGram Desktop: Ghost mode, антиудаление и доп. оформление. Для Linux Mint, Ubuntu, Debian и других дистрибутивов.</p>
+    </description>
+    <categories>
+        <category>Network</category>
+        <category>InstantMessaging</category>
+    </categories>
+    <url type="homepage">https://github.com/stillemptyNOW/AyuGram-For-Linux</url>
+    <url type="vcs-browser">https://github.com/stillemptyNOW/AyuGram-For-Linux</url>
+    <url type="bugtracker">https://github.com/stillemptyNOW/AyuGram-For-Linux/issues</url>
+    <launchable type="desktop-id">com.ayugram.desktop.desktop</launchable>
+    <provides>
+        <binary>AyuGram</binary>
+        <binary>ayugram</binary>
+    </provides>
+    <releases>
+        <release version="7.0.9" date="2026-08-08">
+            <description>
+                <p>Track upstream AyuGram Desktop v7.0.9 and add Linux Mint / Debian packaging.</p>
+            </description>
+        </release>
+    </releases>
+    <content_rating type="oars-1.1">
+        <content_attribute id="social-chat">intense</content_attribute>
+        <content_attribute id="social-audio">intense</content_attribute>
+        <content_attribute id="social-contacts">intense</content_attribute>
+        <content_attribute id="money-purchasing">intense</content_attribute>
+    </content_rating>
+</component>

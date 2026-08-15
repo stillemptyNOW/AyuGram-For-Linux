@@ -1,0 +1,48 @@
+name: Check AyuGram upstream
+
+on:
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compare tags
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          OURS=$(sed -n 's/.*"upstream_tag"[[:space:]]*:[[:space:]]*"\([^\"]*\)".*/\1/p' VERSION.json | head -n1)
+          LATEST=$(curl -fsSL -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/AyuGram/AyuGramDesktop/releases/latest | \
+            sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^\"]*\)".*/\1/p' | head -n1)
+          echo "tracked=$OURS latest=$LATEST"
+          if [ -z "$LATEST" ]; then
+            echo "could not read upstream tag"
+            exit 0
+          fi
+          if [ "$OURS" = "$LATEST" ]; then
+            echo "already on $LATEST"
+            exit 0
+          fi
+          TITLE="Upstream AyuGram $LATEST is out (we track $OURS)"
+          if gh issue list --search "$TITLE in:title" --json number --jq 'length' | grep -qx 0; then
+            gh issue create --title "$TITLE" --body "AyuGram Desktop released **$LATEST**.
+
+Tracked in VERSION.json: **$OURS**.
+
+Update VERSION.json, bump metainfo, then run the **Linux packages** workflow.
+
+- Upstream: https://github.com/AyuGram/AyuGramDesktop/releases/tag/$LATEST"
+          else
+            echo "issue already open"
+          fi

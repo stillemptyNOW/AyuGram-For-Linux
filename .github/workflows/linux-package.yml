@@ -1,0 +1,90 @@
+name: Linux packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      method:
+        description: "How to obtain the AyuGram binary"
+        required: true
+        default: flatpak-repack
+        type: choice
+        options:
+          - flatpak-repack
+          - source
+      version:
+        description: "Version label (empty = VERSION.json)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Version
+        id: ver
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION=$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^\"]*\)".*/\1/p' VERSION.json | head -n1)
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Building AyuGram For Linux $VERSION"
+
+      - name: Install packagers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl wget ca-certificates dpkg-dev flatpak desktop-file-utils libfuse2
+
+      - name: Obtain binary (Flatpak repack)
+        if: ${{ inputs.method == 'flatpak-repack' }}
+        run: |
+          chmod +x scripts/*.sh
+          AYUGRAM_FROM_FLATPAK=1 VERSION="${{ steps.ver.outputs.version }}" ./scripts/package-deb.sh
+          if [ -x out/AyuGram ]; then
+            VERSION="${{ steps.ver.outputs.version }}" ./scripts/package-appimage.sh || true
+          fi
+
+      - name: Obtain binary (source / Docker)
+        if: ${{ inputs.method == 'source' }}
+        run: |
+          chmod +x scripts/*.sh
+          ./scripts/build-linux.sh
+          VERSION="${{ steps.ver.outputs.version }}" ./scripts/package-deb.sh
+          VERSION="${{ steps.ver.outputs.version }}" ./scripts/package-appimage.sh || true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ayugram-linux-${{ steps.ver.outputs.version }}
+          path: |
+            dist/*
+            out/AyuGram
+          if-no-files-found: error
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.ver.outputs.version }}
+          name: AyuGram For Linux ${{ steps.ver.outputs.version }}
+          generate_release_notes: false
+          body: |
+            Linux packages for AyuGram Desktop **${{ steps.ver.outputs.version }}**.
+
+            - `.deb` — Linux Mint, Ubuntu, Debian
+            - AppImage — any modern x86_64 Linux
+
+            Upstream: https://github.com/AyuGram/AyuGramDesktop/releases/tag/v${{ steps.ver.outputs.version }}
+
+            Install:
+            ```bash
+            curl -fsSL https://raw.githubusercontent.com/stillemptyNOW/AyuGram-For-Linux/main/scripts/install.sh | bash
+            ```
+          files: dist/*

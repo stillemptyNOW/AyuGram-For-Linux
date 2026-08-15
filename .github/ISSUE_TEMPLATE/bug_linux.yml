@@ -1,0 +1,41 @@
+name: Linux bug
+description: Something broke on Linux Mint, Ubuntu, Debian or another distro
+labels: ["linux"]
+body:
+  - type: dropdown
+    id: distro
+    attributes:
+      label: Distro
+      options:
+        - Linux Mint
+        - Ubuntu
+        - Debian
+        - Fedora
+        - Arch
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: AyuGram / package version
+    validations:
+      required: true
+  - type: dropdown
+    id: method
+    attributes:
+      label: Install method
+      options:
+        - .deb
+        - Flatpak
+        - AppImage
+        - source / Docker
+        - other
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+    validations:
+      required: true
