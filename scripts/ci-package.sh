@@ -8,7 +8,6 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 ROOT="$(cd "${HERE}/.." && pwd)"
 VERSION="${VERSION:-$(read_tracked_version)}"
-ARCH="amd64"
 DIST="${ROOT}/dist"
 BUILD="${ROOT}/build"
 OUT="${ROOT}/out"
@@ -46,25 +45,55 @@ log "downloading $FLATPAK_URL"
 download "$FLATPAK_URL" "$BUNDLE"
 cp -f "$BUNDLE" "${DIST}/ayugram-desktop-${VERSION}.flatpak"
 
-extract_binary() {
-  need_cmd flatpak
-  ensure_flathub
-  log "installing GNOME Platform runtime (needed to import the bundle)"
-  flatpak install --user -y --noninteractive flathub org.gnome.Platform//50 || \
-    flatpak install --user -y --noninteractive flathub org.gnome.Platform//48 || true
-  log "installing Flatpak bundle"
-  flatpak install --user -y --noninteractive "$BUNDLE"
-
+extract_via_ostree() {
+  local repo="${BUILD}/ostree-repo"
+  local checkout="${BUILD}/flatpak-checkout"
+  rm -rf "$repo" "$checkout"
+  mkdir -p "$repo"
+  ostree init --repo="$repo" --mode=archive-z2
+  log "importing Flatpak bundle into ostree"
+  flatpak build-import-bundle "$repo" "$BUNDLE"
+  log "ostree refs:"
+  ostree --repo="$repo" refs || true
+  local ref
+  ref="$(ostree --repo="$repo" refs | awk '/ayugram|com\.ayugram|app\//{print; exit}')"
+  if [[ -z "$ref" ]]; then
+    ref="$(ostree --repo="$repo" refs | head -n1 || true)"
+  fi
+  [[ -n "$ref" ]] || return 1
+  log "checking out $ref"
+  ostree --repo="$repo" checkout "$ref" "$checkout"
+  find "$checkout" -type f \( -name AyuGram -o -name ayugram-desktop \) -print || true
   local found
-  found="$(find "${HOME}/.local/share/flatpak/app/${FLATPAK_ID}" \
-    \( -type f -name AyuGram -o -type f -name ayugram-desktop \) 2>/dev/null | head -n1 || true)"
-  [[ -n "$found" ]] || die "Flatpak installed but AyuGram binary not found"
+  found="$(find "$checkout" -type f \( -name AyuGram -o -name ayugram-desktop \) | head -n1 || true)"
+  [[ -n "$found" ]] || return 1
   cp -f "$found" "${OUT}/AyuGram"
   chmod +x "${OUT}/AyuGram"
   log "extracted binary: ${OUT}/AyuGram ($(du -h "${OUT}/AyuGram" | awk '{print $1}'))"
 }
 
-extract_binary
+extract_via_flatpak_install() {
+  log "adding Flathub as a user remote"
+  flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+  flatpak remotes --show-details || true
+  log "installing GNOME Platform runtime"
+  flatpak install --user -y --noninteractive flathub org.gnome.Platform//50
+  log "installing Flatpak bundle"
+  flatpak install --user -y --noninteractive "$BUNDLE"
+  local found
+  found="$(find "${HOME}/.local/share/flatpak/app/${FLATPAK_ID}" \
+    \( -type f -name AyuGram -o -type f -name ayugram-desktop \) 2>/dev/null | head -n1 || true)"
+  [[ -n "$found" ]] || return 1
+  cp -f "$found" "${OUT}/AyuGram"
+  chmod +x "${OUT}/AyuGram"
+  log "extracted binary: ${OUT}/AyuGram ($(du -h "${OUT}/AyuGram" | awk '{print $1}'))"
+}
+
+if ! extract_via_ostree; then
+  warn "ostree import failed, falling back to Flatpak install"
+  extract_via_flatpak_install
+fi
+[[ -x "${OUT}/AyuGram" ]] || die "could not extract AyuGram binary"
 
 log "building .deb"
 VERSION="$VERSION" "${HERE}/package-deb.sh" "${OUT}/AyuGram"
@@ -126,7 +155,7 @@ if [[ "$rc" -ne 0 || ! -f "$LDAI_OUTPUT" ]]; then
   if [[ -n "$found" ]]; then
     mv -f "$found" "$LDAI_OUTPUT"
   else
-    warn "AppImage tool failed; shipping the stripped binary as a fallback AppImage-named file is skipped"
+    warn "AppImage tool failed; continuing without AppImage"
   fi
 fi
 
