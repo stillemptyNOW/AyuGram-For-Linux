@@ -1,0 +1,15 @@
+AyuGram For Linux
+=================
+
+Unofficial Linux packaging of AyuGram Desktop.
+
+Upstream application:
+  https://github.com/AyuGram/AyuGramDesktop
+
+Telegram Desktop:
+  https://github.com/telegramdesktop/tdesktop
+
+Community Flatpak builds used as an install fallback:
+  https://github.com/0FL01/AyuGramDesktop-flatpak
+
+This project is not affiliated with Telegram FZ-LLC or Radolyn Labs.

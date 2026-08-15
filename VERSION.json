@@ -1,0 +1,10 @@
+{
+  "name": "AyuGram For Linux",
+  "version": "7.0.9",
+  "upstream_repo": "AyuGram/AyuGramDesktop",
+  "upstream_tag": "v7.0.9",
+  "upstream_commit": "032ad328549cff9f612d106d8660fbc03eb43130",
+  "flatpak_id": "com.ayugram.desktop",
+  "binary": "AyuGram",
+  "flatpak_fallback_repo": "0FL01/AyuGramDesktop-flatpak"
+}

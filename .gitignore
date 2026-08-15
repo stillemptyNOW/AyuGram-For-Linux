@@ -1,0 +1,17 @@
+/build/
+/out/
+/dist/
+/src/
+/AppDir/
+/pkg/
+*.deb
+*.rpm
+*.AppImage
+*.flatpak
+*.tar.gz
+*.tar.xz
+AyuGram
+.cache/
+.ccache/
+*.log
+.DS_Store
