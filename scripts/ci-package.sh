@@ -63,9 +63,21 @@ REF="$(ostree --repo="$REPO" refs | grep -m1 "^app/${FLATPAK_ID}/" || true)"
 # -U: user mode, no chown (fails on CI runners otherwise).
 ostree --repo="$REPO" checkout -U "$REF" "$CHECKOUT"
 
-BIN_SRC="${CHECKOUT}/files/bin/AyuGram"
-[[ -f "$BIN_SRC" ]] || BIN_SRC="$(find "${CHECKOUT}/files" -type f -name AyuGram | head -n1)"
-[[ -n "$BIN_SRC" && -f "$BIN_SRC" ]] || die "AyuGram binary not found in the bundle"
+# The manifest installs the binary as /app/bin/ayugram-desktop (its `command`).
+BIN_SRC=""
+for candidate in "${CHECKOUT}/files/bin/ayugram-desktop" "${CHECKOUT}/files/bin/AyuGram"; do
+  if [[ -f "$candidate" ]]; then
+    BIN_SRC="$candidate"
+    break
+  fi
+done
+if [[ -z "$BIN_SRC" ]]; then
+  BIN_SRC="$(find "${CHECKOUT}/files" -type f \( -name ayugram-desktop -o -name AyuGram \) | head -n1)"
+fi
+if [[ -z "$BIN_SRC" ]]; then
+  find "${CHECKOUT}/files" -maxdepth 2 >&2 || true
+  die "AyuGram binary not found in the bundle"
+fi
 install -Dm755 "$BIN_SRC" "${OUT}/AyuGram"
 
 if [[ -d "${CHECKOUT}/files/share/icons/hicolor" ]]; then
