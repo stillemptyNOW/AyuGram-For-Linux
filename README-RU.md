@@ -64,7 +64,7 @@ cd AyuGram-For-Linux
 sudo pacman -U dist/ayugram-for-linux-bin-*-x86_64.pkg.tar.zst
 ```
 
-Пакет зависит только от `glibc`, `glib2`, `fontconfig` и `freetype2`, поэтому обновления Qt, abseil или ffmpeg в Arch его не ломают. Подробности: [docs/arch.md](docs/arch.md).
+Пакет зависит только от `glibc`, `glib2`, `fontconfig`, `freetype2`, `cairo` и `pango`, поэтому обновления Qt, abseil или ffmpeg в Arch его не ломают. Подробности: [docs/arch.md](docs/arch.md).
 
 ## Удаление
 

@@ -43,7 +43,7 @@ EOF
 SIZE_KB="$(du -sk "${STAGE}/usr" | awk '{print $1}')"
 
 # The binary is the portable build: Qt, ffmpeg, OpenSSL and friends are
-# static. Only glibc >= 2.28, GLib and fontconfig/freetype are linked;
+# static. Only glibc >= 2.28, GLib, fontconfig/freetype and cairo/pango are linked;
 # audio, GTK and WebKit are loaded at runtime when present.
 cat > "${STAGE}/DEBIAN/control" <<EOF
 Package: ${PKG_NAME}
@@ -53,7 +53,7 @@ Priority: optional
 Architecture: ${ARCH}
 Maintainer: ${REPO_OWNER} <${REPO_OWNER}@users.noreply.github.com>
 Installed-Size: ${SIZE_KB}
-Depends: libc6 (>= 2.28), libglib2.0-0 | libglib2.0-0t64, libfontconfig1, libfreetype6
+Depends: libc6 (>= 2.28), libglib2.0-0 | libglib2.0-0t64, libfontconfig1, libfreetype6, libcairo2, libpango-1.0-0, libpangocairo-1.0-0, libpangoft2-1.0-0
 Recommends: libpulse0 | pipewire-pulse, libasound2 | libasound2t64, xdg-utils, xdg-desktop-portal, fonts-open-sans
 Suggests: libwebkit2gtk-4.1-0
 Homepage: ${REPO_URL}

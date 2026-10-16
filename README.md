@@ -64,7 +64,7 @@ cd AyuGram-For-Linux
 sudo pacman -U dist/ayugram-for-linux-bin-*-x86_64.pkg.tar.zst
 ```
 
-The package only depends on `glibc`, `glib2`, `fontconfig` and `freetype2`, so Qt, abseil or ffmpeg updates in Arch never break it. Details and caveats: [docs/arch.md](docs/arch.md).
+The package only depends on `glibc`, `glib2`, `fontconfig`, `freetype2`, `cairo` and `pango`, so Qt, abseil or ffmpeg updates in Arch never break it. Details and caveats: [docs/arch.md](docs/arch.md).
 
 ## Uninstall
 

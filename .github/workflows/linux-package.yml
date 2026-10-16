@@ -91,6 +91,31 @@ jobs:
           path: dist/*
           if-no-files-found: error
 
+  deb-test:
+    needs: package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ["ubuntu:20.04", "debian:12", "ubuntu:24.04"]
+    container: ${{ matrix.image }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-dist
+          path: dist
+
+      - name: Install the .deb on a clean system
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends ./dist/ayugram-desktop_*_amd64.deb
+          test -x /usr/bin/AyuGram
+          ldd /usr/bin/AyuGram
+          if ldd /usr/bin/AyuGram | grep "not found"; then exit 1; fi
+
   arch:
     needs: package
     runs-on: ubuntu-24.04
@@ -142,7 +167,7 @@ jobs:
           if-no-files-found: error
 
   release:
-    needs: [package, arch]
+    needs: [package, deb-test, arch]
     if: github.event_name == 'workflow_dispatch' && inputs.publish
     runs-on: ubuntu-24.04
     permissions:

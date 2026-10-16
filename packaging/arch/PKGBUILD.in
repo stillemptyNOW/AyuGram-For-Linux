@@ -12,7 +12,7 @@ pkgdesc="AyuGram Desktop: Telegram client with Ghost mode and anti-recall (porta
 arch=('x86_64')
 url="https://github.com/stillemptyNOW/AyuGram-For-Linux"
 license=('GPL-3.0-or-later WITH OpenSSL-exception')
-depends=('glibc' 'glib2' 'fontconfig' 'freetype2' 'hicolor-icon-theme')
+depends=('glibc' 'glib2' 'fontconfig' 'freetype2' 'cairo' 'pango' 'hicolor-icon-theme')
 optdepends=(
   'libpulse: sound through PulseAudio or pipewire-pulse'
   'alsa-lib: sound through ALSA'

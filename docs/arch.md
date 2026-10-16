@@ -6,7 +6,7 @@ Works on Arch and its derivatives: Manjaro, EndeavourOS, CachyOS, Garuda, Artix,
 
 ## What the package is
 
-It repackages the portable AyuGram build from this repo's Releases (the same binary as the `.deb`): Qt, ffmpeg, OpenSSL and WebRTC are linked statically, only glibc ≥ 2.28, GLib, fontconfig and freetype come from the system.
+It repackages the portable AyuGram build from this repo's Releases (the same binary as the `.deb`): Qt, ffmpeg, OpenSSL and WebRTC are linked statically, only glibc ≥ 2.28, GLib, fontconfig, freetype, cairo and pango come from the system.
 
 That is the opposite of the AUR `ayugram-desktop` package, which compiles against Arch's `qt6-base`, `abseil-cpp`, `protobuf` and friends. The native build integrates a bit tighter with Plasma, but it needs a rebuild every time one of those libraries changes soname. This one does not.
 
