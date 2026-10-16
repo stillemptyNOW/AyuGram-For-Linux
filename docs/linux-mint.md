@@ -27,7 +27,7 @@ That is fine. AyuGram uses the binary name `AyuGram` and the desktop id `com.ayu
 
 ## `tg://` links
 
-The `.deb` postinst tries to register AyuGram as the `tg://` handler. To do it yourself:
+The package declares the `tg://` handler, so it shows up in *Preferred Applications*. If Telegram Desktop still opens the links, make AyuGram the default:
 
 ```bash
 xdg-mime default com.ayugram.desktop.desktop x-scheme-handler/tg
@@ -60,3 +60,13 @@ sudo apt install ./dist/ayugram-desktop_*_amd64.deb
 ```
 
 You need tens of gigabytes free and a few hours. The Docker image is the official Telegram Desktop CentOS build environment.
+
+## AppImage does not start
+
+Mint 22 / Ubuntu 24.04 do not ship FUSE 2 by default:
+
+```bash
+sudo apt install libfuse2t64
+```
+
+Or skip FUSE entirely with the portable install: `install.sh --method portable`.

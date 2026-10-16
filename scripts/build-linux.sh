@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 # Build AyuGram Desktop from official sources using the Telegram Docker image.
 # Follows https://github.com/AyuGram/AyuGramDesktop/blob/dev/docs/building-linux.md
+#
+# Env:
+#   UPSTREAM_TAG        tag to build (default: v<VERSION.json version>)
+#   TDESKTOP_API_ID / TDESKTOP_API_HASH   your API pair (default: public tdesktop pair)
+#   TDESKTOP_IMAGE      build image (default: ghcr.io/telegramdesktop/tdesktop/centos_env:latest)
+#   PREPARE=1           build the image locally with the official prepare script
+#                       (hours; only needed when the ghcr image does not match)
 
 set -euo pipefail
 
@@ -24,40 +31,32 @@ SRC="${WORK}/tdesktop"
 
 if [[ ! -d "$SRC/.git" ]]; then
   log "cloning ${UPSTREAM_URL} (${UPSTREAM_TAG})"
-  git clone --recursive --branch "$UPSTREAM_TAG" --depth 1 "$UPSTREAM_URL" "$SRC" \
-    || git clone --recursive "$UPSTREAM_URL" "$SRC"
-  if [[ -d "$SRC/.git" ]]; then
-    git -C "$SRC" fetch --tags --depth 1 origin "$UPSTREAM_TAG" || true
-    git -C "$SRC" checkout "$UPSTREAM_TAG" || true
-    git -C "$SRC" submodule update --init --recursive --depth 1 || \
-      git -C "$SRC" submodule update --init --recursive
-  fi
+  git clone --branch "$UPSTREAM_TAG" --depth 1 "$UPSTREAM_URL" "$SRC"
+  git -C "$SRC" submodule update --init --recursive --depth 1 \
+    || git -C "$SRC" submodule update --init --recursive
 else
-  log "reusing existing source tree at $SRC"
+  current="$(git -C "$SRC" describe --tags --exact-match 2>/dev/null || true)"
+  if [[ "$current" != "$UPSTREAM_TAG" ]]; then
+    die "${SRC} is at '${current:-unknown}', not ${UPSTREAM_TAG}. Remove it or set BUILD_DIR"
+  fi
+  log "reusing source tree at $SRC (${UPSTREAM_TAG})"
 fi
 
-if [[ -x "${SRC}/Telegram/build/prepare/linux.sh" ]]; then
-  log "preparing libraries (official linux.sh)"
-  if have poetry || have python3; then
-    (
-      cd "$SRC"
-      ./Telegram/build/prepare/linux.sh || warn "prepare script returned non-zero; continuing if Docker image already has deps"
-    )
-  else
-    warn "poetry/python3 not found; skipping prepare and relying on ${IMAGE}"
-  fi
+if [[ "${PREPARE:-0}" == "1" ]]; then
+  log "building the image locally (official prepare/linux.sh)"
+  ( cd "$SRC" && ./Telegram/build/prepare/linux.sh )
+  IMAGE="${TDESKTOP_IMAGE:-tdesktop:centos_env}"
+else
+  log "pulling ${IMAGE}"
+  docker pull "$IMAGE" || die "could not pull ${IMAGE}; re-run with PREPARE=1 to build it locally"
 fi
 
 log "building with ${IMAGE}"
 log "API id ${API_ID} (override with TDESKTOP_API_ID / TDESKTOP_API_HASH)"
 
-docker pull "$IMAGE"
-
 docker run --rm \
   -u "$(id -u):$(id -g)" \
   -v "${SRC}:/usr/src/tdesktop" \
-  -e TDESKTOP_API_ID="$API_ID" \
-  -e TDESKTOP_API_HASH="$API_HASH" \
   "$IMAGE" \
   /usr/src/tdesktop/Telegram/build/docker/centos_env/build.sh \
   -D TDESKTOP_API_ID="$API_ID" \
@@ -77,12 +76,18 @@ done
 
 [[ -n "$BIN" ]] || die "build finished but AyuGram binary was not found in ${SRC}/out"
 
-mkdir -p "${ROOT}/out"
-cp -f "$BIN" "${ROOT}/out/AyuGram"
-chmod +x "${ROOT}/out/AyuGram"
+rm -rf "${ROOT}/out"
+install -Dm755 "$BIN" "${ROOT}/out/AyuGram"
 if have strip; then
   strip --strip-unneeded "${ROOT}/out/AyuGram" || true
 fi
 
+for size in $ICON_SIZES; do
+  icon="${SRC}/Telegram/Resources/art/icon${size}.png"
+  if [[ -f "$icon" ]]; then
+    install -Dm644 "$icon" "${ROOT}/out/icons/hicolor/${size}x${size}/apps/${FLATPAK_ID}.png"
+  fi
+done
+
 log "binary: ${ROOT}/out/AyuGram"
-log "next: ./scripts/package-deb.sh   and/or   ./scripts/package-appimage.sh"
+log "next: ./scripts/package-deb.sh, ./scripts/package-appimage.sh or ./scripts/package-arch.sh"

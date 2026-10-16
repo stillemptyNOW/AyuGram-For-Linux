@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<component type="desktop">
+<component type="desktop-application">
     <id>com.ayugram.desktop</id>
     <metadata_license>CC0-1.0</metadata_license>
-    <project_license>GPL-3.0</project_license>
+    <project_license>GPL-3.0-or-later WITH OpenSSL-exception</project_license>
     <name>AyuGram Desktop</name>
-    <summary>AyuGram Telegram client packaged for Linux</summary>
-    <summary xml:lang="ru">Клиент Telegram AyuGram, собранный для Linux</summary>
+    <summary>Telegram client with Ghost mode and anti-recall</summary>
+    <summary xml:lang="ru">Клиент Telegram с режимом призрака и антиудалением</summary>
+    <developer id="one.ayugram">
+        <name>Radolyn Labs</name>
+    </developer>
     <description>
-        <p>Unofficial Linux packages of AyuGram Desktop: Ghost mode, anti-recall and extra customization, built for Linux Mint, Ubuntu, Debian and other distributions.</p>
-        <p xml:lang="ru">Неофициальные Linux-пакеты AyuGram Desktop: Ghost mode, антиудаление и доп. оформление. Для Linux Mint, Ubuntu, Debian и других дистрибутивов.</p>
+        <p>Unofficial Linux packages of AyuGram Desktop: Ghost mode, anti-recall and extra customization. Built for Linux Mint, Ubuntu, Debian, Arch Linux and other distributions.</p>
+        <p xml:lang="ru">Неофициальные Linux-пакеты AyuGram Desktop: режим призрака, антиудаление и доп. оформление. Для Linux Mint, Ubuntu, Debian, Arch Linux и других дистрибутивов.</p>
     </description>
     <categories>
         <category>Network</category>
@@ -23,9 +26,9 @@
         <binary>ayugram</binary>
     </provides>
     <releases>
-        <release version="7.0.9" date="2026-08-08">
+        <release version="@VERSION@" date="@DATE@">
             <description>
-                <p>Track upstream AyuGram Desktop v7.0.9 and add Linux Mint / Debian packaging.</p>
+                <p>Linux packages of upstream AyuGram Desktop v@VERSION@.</p>
             </description>
         </release>
     </releases>

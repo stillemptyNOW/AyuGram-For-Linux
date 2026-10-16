@@ -2,69 +2,69 @@
 
 [ [English](README.md) | Русский ]
 
-**Неофициальный Linux-порт [AyuGram Desktop](https://github.com/AyuGram/AyuGramDesktop)** — пакеты и установщик для Linux Mint, Ubuntu, Debian, Fedora, Arch и других дистрибутивов.
+**Неофициальные Linux-пакеты [AyuGram Desktop](https://github.com/AyuGram/AyuGramDesktop)** для Linux Mint, Ubuntu, Debian, Arch Linux и любого другого x86_64-дистрибутива.
 
-Официальный AyuGram отдаёт готовые сборки только под Windows и macOS. Этот репозиторий нужен, чтобы поставить тот же клиент на Linux без ручной сборки ~25 000 коммитов.
+Официальный AyuGram выпускает сборки только под Windows и macOS. Этот репозиторий берёт портативную Linux-сборку (Qt вшит статически, нужен glibc ≥ 2.28) из community Flatpak и делает из неё нормальные пакеты — собирать Telegram Desktop самому не нужно.
 
-Текущий апстрим: **AyuGram Desktop v7.0.9**
+Текущий апстрим: **AyuGram Desktop v7.2.9**
 
-## Что внутри
-
-| Возможность | Откуда |
-| --- | --- |
-| Ghost mode | апстрим |
-| Антиудаление / история сообщений | апстрим |
-| Шрифты, streamer mode, переводчик | апстрим |
-| Локальный Telegram Premium | апстрим |
-| Установка одной командой на Linux Mint | этот репозиторий |
-| `.deb` для Mint / Ubuntu / Debian | этот репозиторий |
-| AppImage | этот репозиторий |
-| Запасной вариант через Flatpak | этот репозиторий |
-| Скрипты сборки из исходников | этот репозиторий |
-
-Это упаковочный форк, а не переписанный клиент. Сама программа — [AyuGram/AyuGramDesktop](https://github.com/AyuGram/AyuGramDesktop), форк [Telegram Desktop](https://github.com/telegramdesktop/tdesktop).
-
-Форк исходников на этом аккаунте: [stillemptyNOW/AyuGramDesktop](https://github.com/stillemptyNOW/AyuGramDesktop)
-
-## Быстрая установка (Linux Mint, Ubuntu, Debian)
+## Быстрая установка
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/stillemptyNOW/AyuGram-For-Linux/main/scripts/install.sh | bash
 ```
 
-Скрипт сам определяет дистрибутив и выбирает способ:
+Скрипт сам определяет дистрибутив:
 
-1. `.deb` из Releases этого репозитория, если пакет уже собран
-2. иначе Flatpak (на Linux Mint обычно уже есть)
-3. AppImage, если указать `--method appimage`
+| Дистрибутив | Что ставится |
+| --- | --- |
+| Linux Mint, Ubuntu, Debian, Pop!_OS, Zorin… | `.deb` из Releases (если не вышло — Flatpak) |
+| Arch, Manjaro, EndeavourOS, CachyOS, Garuda… | pacman-пакет из Releases (если не вышло — `makepkg`) |
+| Fedora | портативная сборка в `~/.local/opt` или Flatpak |
+| всё остальное | портативная сборка в `~/.local/opt`, root не нужен |
 
 ### Выбрать способ вручную
 
 ```bash
-# пакет для Linux Mint / Ubuntu / Debian
 curl -fsSL https://raw.githubusercontent.com/stillemptyNOW/AyuGram-For-Linux/main/scripts/install.sh | bash -s -- --method deb
-
-# Flatpak (самый простой рабочий вариант)
-curl -fsSL https://raw.githubusercontent.com/stillemptyNOW/AyuGram-For-Linux/main/scripts/install.sh | bash -s -- --method flatpak
-
-# портативный AppImage
-curl -fsSL https://raw.githubusercontent.com/stillemptyNOW/AyuGram-For-Linux/main/scripts/install.sh | bash -s -- --method appimage
-
-# сборка официальных исходников через Docker (долго, ~30 ГБ)
-curl -fsSL https://raw.githubusercontent.com/stillemptyNOW/AyuGram-For-Linux/main/scripts/install.sh | bash -s -- --method source
 ```
 
-### Другие дистрибутивы
-
-| Дистрибутив | Команда |
+| `--method` | |
 | --- | --- |
-| **Linux Mint / Ubuntu / Debian** | установщик выше или `sudo apt install ./ayugram-desktop_*_amd64.deb` |
-| **Fedora** | `sudo dnf install ayugram-desktop` из [RPM Fusion](https://admin.rpmfusion.org/pkgdb/package/free/ayugram-desktop/) |
-| **Arch / Manjaro** | `yay -S ayugram-desktop` или `yay -S ayugram-desktop-bin` |
-| **NixOS** | `ayugram-desktop` из nixpkgs / [ndfined-crp](https://github.com/ndfined-crp/ayugram-desktop) |
-| **Любой Linux** | Flatpak или AppImage из [Releases](https://github.com/stillemptyNOW/AyuGram-For-Linux/releases) |
+| `deb` | `.deb`-пакет (Mint / Ubuntu / Debian) |
+| `arch` | pacman-пакет `ayugram-for-linux-bin` |
+| `aur` | собрать `ayugram-desktop` из AUR через yay/paru (системные библиотеки, долго) |
+| `flatpak` | Flatpak |
+| `appimage` | AppImage в `~/Applications` |
+| `portable` | распаковать в `~/.local/opt/AyuGram`, добавить в меню с иконками |
+| `source` | собрать официальные исходники в Docker (часы, ~30 ГБ) |
 
-Заметки именно для Mint: [docs/linux-mint.md](docs/linux-mint.md)
+## Arch Linux
+
+Три способа, от простого к сложному:
+
+```bash
+# 1. установщик (скачает готовый пакет и сделает pacman -U)
+curl -fsSL https://raw.githubusercontent.com/stillemptyNOW/AyuGram-For-Linux/main/scripts/install.sh | bash
+```
+
+```ini
+# 2. pacman-репозиторий: добавить в /etc/pacman.conf, потом `sudo pacman -Syu ayugram-for-linux-bin`
+#    дальше обновления приходят обычным `sudo pacman -Syu`
+[ayugram]
+SigLevel = Optional TrustAll
+Server = https://github.com/stillemptyNOW/AyuGram-For-Linux/releases/latest/download
+```
+
+```bash
+# 3. собрать самому из PKGBUILD
+git clone https://github.com/stillemptyNOW/AyuGram-For-Linux.git
+cd AyuGram-For-Linux
+./scripts/package-arch.sh
+sudo pacman -U dist/ayugram-for-linux-bin-*-x86_64.pkg.tar.zst
+```
+
+Пакет зависит только от `glibc`, `glib2`, `fontconfig` и `freetype2`, поэтому обновления Qt, abseil или ffmpeg в Arch его не ломают. Подробности: [docs/arch.md](docs/arch.md).
 
 ## Удаление
 
@@ -72,44 +72,31 @@ curl -fsSL https://raw.githubusercontent.com/stillemptyNOW/AyuGram-For-Linux/mai
 curl -fsSL https://raw.githubusercontent.com/stillemptyNOW/AyuGram-For-Linux/main/scripts/uninstall.sh | bash
 ```
 
-## Сборка у себя
+Удаляет `.deb`, pacman-пакет, Flatpak, AppImage или портативную установку. Переписки в `~/.local/share/AyuGramDesktop` остаются.
 
-Нужны Git, Docker и Docker Buildx. На Linux Mint:
+## Собрать пакеты самому
 
 ```bash
-sudo apt update
-sudo apt install -y git curl ca-certificates
-# Docker: https://docs.docker.com/engine/install/ubuntu/
 git clone https://github.com/stillemptyNOW/AyuGram-For-Linux.git
 cd AyuGram-For-Linux
-./scripts/build-linux.sh
-./scripts/package-deb.sh
-./scripts/package-appimage.sh
+make package     # нужны flatpak и ostree: .deb, .tar.xz, AppImage в dist/
+make arch        # на Arch: pacman-пакет из tar.xz
+make build       # или скомпилировать исходники апстрима в Docker (часы)
 ```
 
-Полная инструкция: [docs/building.md](docs/building.md)
-
-## Зачем этот репозиторий
-
-| Официальный AyuGram | Этот форк |
-| --- | --- |
-| Windows `.zip` + macOS `.dmg` | `.deb` для Linux Mint / Ubuntu |
-| Linux только из исходников | AppImage |
-| Community Flatpak в чужом репозитории | один установщик для Mint и рядом |
-| Arch / Fedora / Nix пакуют другие люди | в приоритете семейство Debian |
+Подробно: [docs/building.md](docs/building.md). Про Mint: [docs/linux-mint.md](docs/linux-mint.md). Таблица дистрибутивов: [docs/distros.md](docs/distros.md).
 
 ## Отказ от ответственности
 
 - Не связан с Telegram FZ-LLC и авторами AyuGram.
-- AyuGram — неофициальный клиент Telegram с функциями, которые могут нарушать Terms of Service (Ghost mode, антиудаление и др.). Используйте на свой риск.
-- Скрипты упаковки здесь — GPL-3.0. Само приложение — GPL-3.0 с исключением OpenSSL, как у Telegram Desktop.
+- В AyuGram есть функции, нарушающие Terms of Service Telegram (режим призрака, антиудаление и др.). Используйте на свой риск.
+- Скрипты упаковки — GPL-3.0. Само приложение — GPL-3.0 с исключением OpenSSL, как Telegram Desktop.
 
 ## Благодарности
 
 - [AyuGram Desktop](https://github.com/AyuGram/AyuGramDesktop) — клиент
 - [Telegram Desktop](https://github.com/telegramdesktop/tdesktop) — апстрим
-- [0FL01/AyuGramDesktop-flatpak](https://github.com/0FL01/AyuGramDesktop-flatpak) — community Flatpak
-- Kotatogram, 64Gram, Forkgram — соседние форки
+- [0FL01/AyuGramDesktop-flatpak](https://github.com/0FL01/AyuGramDesktop-flatpak) — community Flatpak, откуда берётся бинарник
 
 ## Лицензия
 

@@ -11,38 +11,45 @@ permissions:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Compare tags
+      - name: Compare with upstream and the community Flatpak
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          OURS=$(sed -n 's/.*"upstream_tag"[[:space:]]*:[[:space:]]*"\([^\"]*\)".*/\1/p' VERSION.json | head -n1)
-          LATEST=$(curl -fsSL -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/AyuGram/AyuGramDesktop/releases/latest | \
-            sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^\"]*\)".*/\1/p' | head -n1)
+          OURS="$(jq -r .upstream_tag VERSION.json)"
+          LATEST="$(gh api repos/AyuGram/AyuGramDesktop/releases/latest --jq .tag_name || true)"
           echo "tracked=$OURS latest=$LATEST"
-          if [ -z "$LATEST" ]; then
-            echo "could not read upstream tag"
+          if [ -z "$LATEST" ] || [ "$OURS" = "$LATEST" ]; then
             exit 0
           fi
-          if [ "$OURS" = "$LATEST" ]; then
-            echo "already on $LATEST"
-            exit 0
-          fi
-          TITLE="Upstream AyuGram $LATEST is out (we track $OURS)"
-          if gh issue list --search "$TITLE in:title" --json number --jq 'length' | grep -qx 0; then
-            gh issue create --title "$TITLE" --body "AyuGram Desktop released **$LATEST**.
 
-Tracked in VERSION.json: **$OURS**.
-
-Update VERSION.json, bump metainfo, then run the **Linux packages** workflow.
-
-- Upstream: https://github.com/AyuGram/AyuGramDesktop/releases/tag/$LATEST"
+          # Packages are cut from the community Flatpak; say whether it exists yet.
+          FLATPAK_TAG="$(gh api 'repos/0FL01/AyuGramDesktop-flatpak/releases?per_page=50' \
+            --jq "[.[] | select(.prerelease | not) | select(.tag_name | startswith(\"flatpak-${LATEST}-\"))][0].tag_name // empty")"
+          if [ -n "$FLATPAK_TAG" ]; then
+            FLATPAK_LINE="Community Flatpak is ready: https://github.com/0FL01/AyuGramDesktop-flatpak/releases/tag/${FLATPAK_TAG}"
           else
-            echo "issue already open"
+            FLATPAK_LINE="Community Flatpak for ${LATEST} is not published yet; packaging will fail until it is."
           fi
+
+          TITLE="Upstream AyuGram ${LATEST} is out (we track ${OURS})"
+          if [ "$(gh issue list --state open --search "\"${TITLE}\" in:title" --json number --jq length)" != "0" ]; then
+            echo "issue already open"
+            exit 0
+          fi
+
+          {
+            echo "AyuGram Desktop released **${LATEST}**. Tracked in VERSION.json: **${OURS}**."
+            echo
+            echo "${FLATPAK_LINE}"
+            echo
+            echo "1. Set \`version\` / \`upstream_tag\` in VERSION.json to ${LATEST#v} / ${LATEST}."
+            echo "2. Run the **Linux packages** workflow."
+            echo
+            echo "Upstream: https://github.com/AyuGram/AyuGramDesktop/releases/tag/${LATEST}"
+          } > body.md
+          gh issue create --title "$TITLE" --body-file body.md

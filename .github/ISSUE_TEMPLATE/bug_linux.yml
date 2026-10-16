@@ -11,7 +11,7 @@ body:
         - Ubuntu
         - Debian
         - Fedora
-        - Arch
+        - Arch / Manjaro / EndeavourOS / CachyOS
         - Other
     validations:
       required: true
@@ -27,8 +27,11 @@ body:
       label: Install method
       options:
         - .deb
+        - pacman package (ayugram-for-linux-bin)
+        - AUR
         - Flatpak
         - AppImage
+        - portable (~/.local/opt)
         - source / Docker
         - other
     validations:

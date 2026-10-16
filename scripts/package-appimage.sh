@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Build a portable x86_64 AppImage from out/AyuGram.
+#
+# The binary is already self-contained (static Qt), so there is nothing to
+# bundle: appimagetool just wraps an AppDir. linuxdeploy is not used because it
+# rejects the "Exec=env ..." desktop entry and drags host libraries in.
 
 set -euo pipefail
 
@@ -12,62 +16,48 @@ VERSION="${VERSION:-$(read_tracked_version)}"
 BIN_IN="${1:-${ROOT}/out/AyuGram}"
 APPDIR="${ROOT}/build/AppDir"
 OUT_DIR="${ROOT}/dist"
-LINUXDEPLOY_URL="https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage"
+APPIMAGETOOL_URL="https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
+OUTPUT="${OUT_DIR}/$(asset_appimage "$VERSION")"
 
-[[ -x "$BIN_IN" ]] || die "binary not found: $BIN_IN (run ./scripts/build-linux.sh)"
-need_cmd chmod
+[[ -x "$BIN_IN" ]] || die "binary not found: $BIN_IN (run ./scripts/build-linux.sh or ./scripts/ci-package.sh)"
 
 rm -rf "$APPDIR"
-mkdir -p \
-  "${APPDIR}/usr/bin" \
-  "${APPDIR}/usr/share/applications" \
-  "${APPDIR}/usr/share/icons/hicolor/256x256/apps" \
-  "${APPDIR}/usr/share/metainfo"
+mkdir -p "${APPDIR}/usr/bin" "${APPDIR}/usr/share/applications" "${APPDIR}/usr/share/metainfo"
+install -m755 "$BIN_IN" "${APPDIR}/usr/bin/AyuGram"
+stage_icons "${APPDIR}/usr/share/icons/hicolor"
+render_metainfo "$VERSION" "${APPDIR}/usr/share/metainfo/${FLATPAK_ID}.metainfo.xml"
 
-cp -f "$BIN_IN" "${APPDIR}/usr/bin/AyuGram"
-chmod 755 "${APPDIR}/usr/bin/AyuGram"
-ln -sfn AyuGram "${APPDIR}/usr/bin/ayugram"
+# Desktop entry inside the image: plain Exec (AppRun resolves the path).
+sed -e 's|^TryExec=.*|TryExec=AyuGram|' \
+    -e 's|^Exec=env DESKTOPINTEGRATION=1 AyuGram |Exec=AyuGram |' \
+    -e '/^DBusActivatable=/d' \
+    "${ROOT}/packaging/linux/${FLATPAK_ID}.desktop" > "${APPDIR}/usr/share/applications/${FLATPAK_ID}.desktop"
+cp -f "${APPDIR}/usr/share/applications/${FLATPAK_ID}.desktop" "${APPDIR}/${FLATPAK_ID}.desktop"
 
-cp -f "${ROOT}/packaging/linux/com.ayugram.desktop.desktop" \
-  "${APPDIR}/usr/share/applications/com.ayugram.desktop.desktop"
-cp -f "${ROOT}/packaging/linux/com.ayugram.desktop.metainfo.xml" \
-  "${APPDIR}/usr/share/metainfo/com.ayugram.desktop.metainfo.xml"
+ICON256="${APPDIR}/usr/share/icons/hicolor/256x256/apps/${FLATPAK_ID}.png"
+[[ -f "$ICON256" ]] || die "256px icon missing; appimagetool needs one"
+cp -f "$ICON256" "${APPDIR}/${FLATPAK_ID}.png"
+ln -sfn "${FLATPAK_ID}.png" "${APPDIR}/.DirIcon"
 
-ICON_URL="https://raw.githubusercontent.com/AyuGram/AyuGramDesktop/dev/.github/AyuGram.png"
-download "$ICON_URL" "${APPDIR}/usr/share/icons/hicolor/256x256/apps/com.ayugram.desktop.png" || true
-cp -f "${APPDIR}/usr/share/icons/hicolor/256x256/apps/com.ayugram.desktop.png" \
-  "${APPDIR}/com.ayugram.desktop.png" 2>/dev/null || true
-cp -f "${APPDIR}/usr/share/applications/com.ayugram.desktop.desktop" \
-  "${APPDIR}/com.ayugram.desktop.desktop"
+cat > "${APPDIR}/AppRun" <<'EOF'
+#!/bin/sh
+HERE="$(dirname "$(readlink -f "$0")")"
+exec "${HERE}/usr/bin/AyuGram" "$@"
+EOF
+chmod 755 "${APPDIR}/AppRun"
 
 mkdir -p "${ROOT}/build" "$OUT_DIR"
-DEPLOY="${ROOT}/build/linuxdeploy-x86_64.AppImage"
-if [[ ! -x "$DEPLOY" ]]; then
-  log "downloading linuxdeploy"
-  download "$LINUXDEPLOY_URL" "$DEPLOY"
-  chmod +x "$DEPLOY"
+TOOL="${ROOT}/build/appimagetool-x86_64.AppImage"
+if [[ ! -x "$TOOL" ]]; then
+  log "downloading appimagetool"
+  download "$APPIMAGETOOL_URL" "$TOOL"
+  chmod +x "$TOOL"
 fi
 
-export LINUXDEPLOY_OUTPUT_VERSION="$VERSION"
-export LDAI_OUTPUT="${OUT_DIR}/AyuGram-${VERSION}-x86_64.AppImage"
+rm -f "$OUTPUT"
+# Extract-and-run: works without FUSE (containers, CI runners).
+ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 "$TOOL" --no-appstream "$APPDIR" "$OUTPUT"
 
-if ! "$DEPLOY" --appdir "$APPDIR" \
-    --desktop-file "${APPDIR}/usr/share/applications/com.ayugram.desktop.desktop" \
-    --icon-file "${APPDIR}/usr/share/icons/hicolor/256x256/apps/com.ayugram.desktop.png" \
-    --output appimage; then
-  warn "linuxdeploy failed; writing a fallback self-extracting-less AppImage layout"
-  # Last-resort: just copy the binary next to a desktop file as a tarball-like AppImage name.
-  cp -f "$BIN_IN" "${OUT_DIR}/AyuGram-${VERSION}-x86_64.AppImage"
-  chmod +x "${OUT_DIR}/AyuGram-${VERSION}-x86_64.AppImage"
-fi
-
-# linuxdeploy drops the AppImage in CWD sometimes.
-if [[ ! -f "$LDAI_OUTPUT" ]]; then
-  found="$(find "$ROOT" -maxdepth 3 -name 'AyuGram*.AppImage' -o -name '*AyuGram*.AppImage' | head -n1 || true)"
-  if [[ -n "$found" && "$found" != "$LDAI_OUTPUT" ]]; then
-    mv -f "$found" "$LDAI_OUTPUT"
-  fi
-fi
-
-[[ -f "$LDAI_OUTPUT" ]] || die "AppImage was not produced"
-log "wrote $LDAI_OUTPUT"
+[[ -f "$OUTPUT" ]] || die "AppImage was not produced"
+chmod +x "$OUTPUT"
+log "wrote $OUTPUT"

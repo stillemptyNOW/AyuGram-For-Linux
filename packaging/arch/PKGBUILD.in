@@ -1,0 +1,43 @@
+# Maintainer: stillemptyNOW <stillemptyNOW@users.noreply.github.com>
+# Rendered by scripts/package-arch.sh from packaging/arch/PKGBUILD.in.
+#
+# Repackages the portable AyuGram build (static Qt, glibc >= 2.28) from
+# https://github.com/stillemptyNOW/AyuGram-For-Linux releases. It does not
+# link against Arch's Qt, abseil or ffmpeg, so library updates never break it.
+
+pkgname=ayugram-for-linux-bin
+pkgver=@VERSION@
+pkgrel=@PKGREL@
+pkgdesc="AyuGram Desktop: Telegram client with Ghost mode and anti-recall (portable build)"
+arch=('x86_64')
+url="https://github.com/stillemptyNOW/AyuGram-For-Linux"
+license=('GPL-3.0-or-later WITH OpenSSL-exception')
+depends=('glibc' 'glib2' 'fontconfig' 'freetype2' 'hicolor-icon-theme')
+optdepends=(
+  'libpulse: sound through PulseAudio or pipewire-pulse'
+  'alsa-lib: sound through ALSA'
+  'libva: hardware video decoding'
+  'webkit2gtk-4.1: in-app browser for bots and Mini Apps'
+  'xdg-desktop-portal: native file dialogs and screen sharing'
+  'xdg-utils: opening links and files'
+  'ttf-opensans: the font Telegram is designed for'
+)
+provides=('ayugram-desktop')
+conflicts=('ayugram-desktop' 'ayugram-desktop-bin' 'ayugram-desktop-git')
+options=('!strip' '!debug')
+source=("@SOURCE@")
+sha256sums=('@SHA256@')
+
+package() {
+  cd "AyuGram-${pkgver}-linux-x64"
+
+  install -Dm755 bin/AyuGram "${pkgdir}/usr/bin/AyuGram"
+  ln -s AyuGram "${pkgdir}/usr/bin/ayugram"
+
+  # Desktop entry, D-Bus service, metainfo and hicolor icons.
+  find share -type f -print0 | while IFS= read -r -d '' f; do
+    install -Dm644 "$f" "${pkgdir}/usr/${f}"
+  done
+
+  install -Dm644 NOTICE "${pkgdir}/usr/share/licenses/${pkgname}/NOTICE"
+}
