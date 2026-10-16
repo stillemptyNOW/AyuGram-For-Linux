@@ -88,9 +88,11 @@ need_cmd makepkg
 [[ "${EUID}" -ne 0 ]] || die "makepkg refuses to run as root; run this as a normal user"
 
 log "running makepkg"
+# --nodeps: this only repackages files, nothing links against the depends;
+# pacman -U installs them along with the package.
 (
   cd "$STAGE"
-  PKGDEST="$DIST" SRCDEST="$STAGE" BUILDDIR="${STAGE}/work" makepkg --force --cleanbuild --noconfirm
+  PKGDEST="$DIST" SRCDEST="$STAGE" BUILDDIR="${STAGE}/work" makepkg --force --cleanbuild --nodeps --noconfirm
 )
 
 PKG_FILE="$(find "$DIST" -maxdepth 1 -name "${ARCH_PKG_NAME}-${VERSION}-${PKGREL}-x86_64.pkg.tar.*" ! -name '*.sig' | head -n1)"
